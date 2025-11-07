@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Sobrevivência: Integridade e Ética</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+        
+        #gameContainer {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        #score {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        canvas {
+            border: 4px solid #667eea;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+            display: block;
+        }
+        
+        #instructions {
+            text-align: center;
+            margin-top: 15px;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        #instructions span {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin: 5px;
+            font-weight: bold;
+        }
+        
+        #question {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.4);
+            display: none;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            z-index: 100;
+        }
+        
+        #questionText {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .option-btn {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 15px 20px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .option-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .option-btn:active {
+            transform: translateY(0);
+        }
+        
+        #gameOver {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 72px;
+            font-weight: bold;
+            color: #ff4444;
+            text-shadow: 0 0 20px #ffff00, 0 0 40px #ff4444;
+            display: none;
+            animation: blink 1s infinite;
+            z-index: 101;
+        }
+        
+        #victory {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.4);
+            display: none;
+            text-align: center;
+            z-index: 102;
+        }
+        
+        #victory h1 {
+            font-size: 48px;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        
+        #victory p {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        #restartBtn {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        #restartBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            z-index: 99;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="score">Pontuação: 0 | Vidas: ❤️❤️❤️</div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="instructions">
+            Use as setas: <span>↑</span> <span>↓</span> <span>←</span> <span>→</span> para mover a personagem
+        </div>
+    </div>
+    
+    <div class="overlay" id="overlay"></div>
+    
+    <div id="question">
+        <p id="questionText"></p>
+        <button class="option-btn" id="optionA"></button>
+        <button class="option-btn" id="optionB"></button>
+        <button class="option-btn" id="optionC"></button>
+    </div>
+    
+    <div id="gameOver">GAME OVER</div>
+    
+    <div id="victory">
+        <h1>🎉 PARABÉNS! 🎉</h1>
+        <p id="victoryMessage">Você completou o jogo com sucesso!</p>
+        <button id="restartBtn">Jogar Novamente</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const questionDiv = document.getElementById('question');
+        const gameOverDiv = document.getElementById('gameOver');
+        const victoryDiv = document.getElementById('victory');
+        const overlay = document.getElementById('overlay');
+        const questionText = document.getElementById('questionText');
+        const optionA = document.getElementById('optionA');
+        const optionB = document.getElementById('optionB');
+        const optionC = document.getElementById('optionC');
+        const scoreDiv = document.getElementById('score');
+        const restartBtn = document.getElementById('restartBtn');
+        const victoryMessage = document.getElementById('victoryMessage');
+
+        let player = {
+            x: 50,
+            y: 300,
+            width: 30,
+            height: 50,
+            speed: 5
+        };
+
+        let obstacles = [
+            { x: 200, y: 250, width: 50, height: 100, passed: false },
+            { x: 400, y: 250, width: 50, height: 100, passed: false },
+            { x: 600, y: 250, width: 50, height: 100, passed: false }
+        ];
+
+        const questions = [
+            {
+                text: "O que significa agir com integridade?",
+                options: ["Mentir para ganhar vantagem", "Ser honesto e cumprir promessas", "Ignorar regras"],
+                correct: 1,
+                feedback: "Integridade significa ser honesto e manter suas promessas!"
+            },
+            {
+                text: "Qual é um exemplo de comportamento ético?",
+                options: ["Roubar para ajudar um amigo", "Devolver dinheiro encontrado", "Trapacear em um jogo"],
+                correct: 1,
+                feedback: "Devolver o que não é seu mostra caráter e ética!"
+            },
+            {
+                text: "Por que a ética é importante?",
+                options: ["Para ganhar dinheiro", "Para viver em harmonia com os outros", "Para ser famoso"],
+                correct: 1,
+                feedback: "A ética nos ajuda a viver bem em sociedade!"
+            }
+        ];
+
+        let currentObstacleIndex = 0;
+        let gameRunning = true;
+        let score = 0;
+        let lives = 3;
+        let clouds = [];
+        let stars = [];
+
+        // Criar nuvens
+        for (let i = 0; i < 5; i++) {
+            clouds.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * 150,
+                width: 60 + Math.random() * 40,
+                height: 30,
+                speed: 0.2 + Math.random() * 0.3
+            });
+        }
+
+        // Criar estrelas de fundo
+        for (let i = 0; i < 20; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * 200,
+                size: 1 + Math.random() * 2,
+                opacity: Math.random()
+            });
+        }
+
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            clouds.forEach(cloud => {
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, cloud.height/2, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.width/3, cloud.y - 10, cloud.height/2 + 5, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.width/1.5, cloud.y, cloud.height/2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                cloud.x += cloud.speed;
+                if (cloud.x > canvas.width + cloud.width) {
+                    cloud.x = -cloud.width;
+                }
+            });
+        }
+
+        function drawStars() {
+            stars.forEach(star => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+                star.opacity += 0.01;
+                if (star.opacity > 1) star.opacity = 0;
+            });
+        }
+
+        function drawPlayer() {
+            // Cabelo
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(player.x + 15, player.y + 10, 12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Rosto
+            ctx.fillStyle = '#FFE4C4';
+            ctx.beginPath();
+            ctx.arc(player.x + 15, player.y + 15, 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Olhos
+            ctx.fillStyle = '#000';
+            ctx.fillRect(player.x + 11, player.y + 13, 2, 2);
+            ctx.fillRect(player.x + 17, player.y + 13, 2, 2);
+            
+            // Sorriso
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(player.x + 15, player.y + 16, 4, 0, Math.PI);
+            ctx.stroke();
+            
+            // Vestido
+            ctx.fillStyle = '#FF69B4';
+            ctx.beginPath();
+            ctx.moveTo(player.x + 5, player.y + 25);
+            ctx.lineTo(player.x + 25, player.y + 25);
+            ctx.lineTo(player.x + 28, player.y + 45);
+            ctx.lineTo(player.x + 2, player.y + 45);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Braços
+            ctx.strokeStyle = '#FFE4C4';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(player.x + 5, player.y + 28);
+            ctx.lineTo(player.x, player.y + 35);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(player.x + 25, player.y + 28);
+            ctx.lineTo(player.x + 30, player.y + 35);
+            ctx.stroke();
+            
+            // Pernas
+            ctx.strokeStyle = '#FF69B4';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(player.x + 12, player.y + 45);
+            ctx.lineTo(player.x + 10, player.y + 55);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(player.x + 18, player.y + 45);
+            ctx.lineTo(player.x + 20, player.y + 55);
+            ctx.stroke();
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                if (!obstacle.passed) {
+                    // Base do obstáculo
+                    ctx.fillStyle = '#8B4513';
+                    ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                    
+                    // Detalhes
+                    ctx.fillStyle = '#A0522D';
+                    ctx.fillRect(obstacle.x + 5, obstacle.y + 10, 10, 20);
+                    ctx.fillRect(obstacle.x + 35, obstacle.y + 30, 10, 25);
+                    
+                    // Símbolo de interrogação
+                    ctx.fillStyle = '#FFD700';
+                    ctx.font = 'bold 30px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('?', obstacle.x + 25, obstacle.y - 10);
+                }
+            });
+        }
+
+        function drawGround() {
+            // Grama
+            ctx.fillStyle = '#228B22';
+            ctx.fillRect(0, 350, canvas.width, 250);
+            
+            // Detalhes da grama
+            ctx.fillStyle = '#32CD32';
+            for (let i = 0; i < canvas.width; i += 40) {
+                ctx.fillRect(i, 350, 20, 10);
+            }
+            
+            // Flores decorativas
+            for (let i = 50; i < canvas.width; i += 150) {
+                ctx.fillStyle = '#FF69B4';
+                ctx.beginPath();
+                ctx.arc(i, 365, 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(i, 365, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function checkCollision() {
+            if (currentObstacleIndex < obstacles.length) {
+                let obs = obstacles[currentObstacleIndex];
+                if (!obs.passed && 
+                    player.x + player.width > obs.x && 
+                    player.x < obs.x + obs.width &&
+                    player.y + player.height > obs.y && 
+                    player.y < obs.y + obs.height) {
+                    showQuestion(currentObstacleIndex);
+                }
+            }
+        }
+
+        function updateScore() {
+            const hearts = '❤️'.repeat(lives) + '🖤'.repeat(3 - lives);
+            scoreDiv.textContent = `Pontuação: ${score} | Vidas: ${hearts}`;
+        }
+
+        function showQuestion(index) {
+            gameRunning = false;
+            let q = questions[index];
+            questionText.textContent = q.text;
+            optionA.textContent = q.options[0];
+            optionB.textContent = q.options[1];
+            optionC.textContent = q.options[2];
+            questionDiv.style.display = 'block';
+            overlay.style.display = 'block';
+
+            optionA.onclick = () => answerQuestion(0, q.correct, index, q.feedback);
+            optionB.onclick = () => answerQuestion(1, q.correct, index, q.feedback);
+            optionC.onclick = () => answerQuestion(2, q.correct, index, q.feedback);
+        }
+
+        function answerQuestion(selected, correct, index, feedback) {
+            questionDiv.style.display = 'none';
+            overlay.style.display = 'none';
+            
+            if (selected === correct) {
+                obstacles[index].passed = true;
+                currentObstacleIndex++;
+                score += 100;
+                updateScore();
+                gameRunning = true;
+                
+                if (currentObstacleIndex >= obstacles.length) {
+                    showVictory();
+                }
+            } else {
+                lives--;
+                updateScore();
+                
+                if (lives <= 0) {
+                    showGameOver();
+                } else {
+                    alert(`Ops! Tente novamente. ${feedback}`);
+                    gameRunning = true;
+                }
+            }
+        }
+
+        function showGameOver() {
+            gameOverDiv.style.display = 'block';
+            overlay.style.display = 'block';
+            setTimeout(() => {
+                resetGame();
+            }, 3000);
+        }
+
+        function showVictory() {
+            victoryMessage.textContent = `Você completou o jogo com ${score} pontos!`;
+            victoryDiv.style.display = 'block';
+            overlay.style.display = 'block';
+        }
+
+        function resetGame() {
+            player.x = 50;
+            player.y = 300;
+            currentObstacleIndex = 0;
+            score = 0;
+            lives = 3;
+            obstacles.forEach(obs => obs.passed = false);
+            gameRunning = true;
+            gameOverDiv.style.display = 'none';
+            victoryDiv.style.display = 'none';
+            overlay.style.display = 'none';
+            updateScore();
+        }
+
+        restartBtn.onclick = resetGame;
+
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            
+            switch (e.key) {
+                case 'ArrowUp':
+                    if (player.y > 200) player.y -= player.speed;
+                    break;
+                case 'ArrowDown':
+                    if (player.y < 340) player.y += player.speed;
+                    break;
+                case 'ArrowLeft':
+                    if (player.x > 0) player.x -= player.speed;
+                    break;
+                case 'ArrowRight':
+                    if (player.x < canvas.width - player.width) player.x += player.speed;
+                    break;
+            }
+        });
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawStars();
+            drawClouds();
+            drawGround();
+            drawObstacles();
+            drawPlayer();
+            
+            if (gameRunning) {
+                checkCollision();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        updateScore();
+        gameLoop();
+    </script>
+</body>
+</html>
